@@ -132,25 +132,41 @@ function runTailwind(outputDir, rootDir) {
 }
 
 function generateRss(context, outputDir) {
+  const base = context.site.base_url;
+  const hasAbsoluteUrl = base.startsWith("http://") || base.startsWith("https://");
+
+  if (!hasAbsoluteUrl) {
+    console.log("[NostrPress] Skipping rss.xml — set BASE_URL for a valid RSS feed with absolute URLs.");
+    return;
+  }
+
   const items = context.articles
     .map((article) => {
-      const url = `${context.site.base_url}/${article.slug}.html`;
+      const url = `${base}/${article.slug}.html`;
       return `\n    <item>\n      <title><![CDATA[${article.title}]]></title>\n      <link>${url}</link>\n      <guid>${url}</guid>\n      <pubDate>${new Date(article.published_at).toUTCString()}</pubDate>\n      <description><![CDATA[${article.summary}]]></description>\n    </item>`;
     })
     .join("");
 
-  const rss = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n  <channel>\n    <title><![CDATA[${context.site.title}]]></title>\n    <link>${context.site.base_url}</link>\n    <description><![CDATA[${context.site.description}]]></description>${items}\n  </channel>\n</rss>`;
+  const rss = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n  <channel>\n    <title><![CDATA[${context.site.title}]]></title>\n    <link>${base}</link>\n    <description><![CDATA[${context.site.description}]]></description>${items}\n  </channel>\n</rss>`;
 
   fs.writeFileSync(path.join(outputDir, "rss.xml"), rss);
 }
 
 function generateSitemap(context, outputDir) {
+  const base = context.site.base_url;
+  const hasAbsoluteUrl = base.startsWith("http://") || base.startsWith("https://");
+
+  if (!hasAbsoluteUrl) {
+    console.log("[NostrPress] Skipping sitemap.xml — set BASE_URL for a valid sitemap with absolute URLs.");
+    return;
+  }
+
   const urls = [];
-  urls.push(`${context.site.base_url}/`);
-  urls.push(`${context.site.base_url}/author/`);
+  urls.push(`${base}/`);
+  urls.push(`${base}/author/`);
 
   for (const article of context.articles) {
-    urls.push(`${context.site.base_url}/${article.slug}.html`);
+    urls.push(`${base}/${article.slug}.html`);
   }
 
   const tagSet = new Set();
@@ -158,7 +174,7 @@ function generateSitemap(context, outputDir) {
     for (const tag of article.tags) tagSet.add(normalizeTag(tag));
   }
   for (const tag of tagSet) {
-    urls.push(`${context.site.base_url}/tags/${tag}/`);
+    urls.push(`${base}/tags/${tag}/`);
   }
 
   const entries = urls
