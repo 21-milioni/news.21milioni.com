@@ -131,6 +131,12 @@
     </article>
     {% endif %}
 
+    <!-- AutoLoad Posts Grid -->
+    {% if articles.length > 1 %}
+    <div id="articles-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <p class="loading">Caricamento articoli da Nostr...</p>
+    </div>
+    
     <!-- Recent Posts Grid -->
     {% if articles.length > 1 %}
     <section class="space-y-8">
