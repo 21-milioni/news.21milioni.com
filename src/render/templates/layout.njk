@@ -262,7 +262,7 @@
 
     <script>
       window.NOSTR_CONFIG = {
-        npub: "{{ site.env.NPUB or '' }}" // Assicurati che il tuo render.js passi site.env
+        npub: "{{ site.env.NPUB }}"
       };
     </script>
     <script src="https://unpkg.com/nostr-tools/dist/bundle.js"></script>

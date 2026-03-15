@@ -1,20 +1,29 @@
 (async () => {
   // --- PARTE 1: Utility per i link esterni
-  console.log("🚀 [NostrPress] Script avviato");
+  console.log("[NostrPress] Client-side script avviato");
 
   // Funzione per convertire npub in HEX (utilizza la libreria nostr-tools)
-  const decodeNpubToHex = (npub) => {
+
+  // Logica simile a resolveIdentity di client.js
+  const getPubkeyHex = (input) => {
     try {
-      if (!npub) return null;
-      if (!npub.startsWith('npub')) {
-        console.warn("⚠️ [NostrPress] La stringa fornita non sembra un npub valido:", npub);
-        return npub; // Forse è già HEX?
+      if (!input) return null;
+      
+      // Se è già un HEX (64 caratteri)
+      if (/^[0-9a-fA-F]{64}$/.test(input)) {
+        return input;
       }
-      const { data } = window.NostrTools.nip19.decode(npub);
-      console.log("✅ [NostrPress] NPUB decodificato correttamente in HEX");
-      return data;
+
+      // Se è un npub, usa la logica di nip19 (come nel tuo client.js)
+      if (input.startsWith('npub')) {
+        const decoded = window.NostrTools.nip19.decode(input);
+        console.log("[NostrPress] NPUB decodificato con successo");
+        return decoded.data;
+      }
+      
+      return null;
     } catch (e) {
-      console.error("❌ [NostrPress] Errore nella decodifica NPUB:", e);
+      console.error("[NostrPress] Errore nel processare l'identità:", e);
       return null;
     }
   };
@@ -35,21 +44,18 @@
   const loadNostrContent = async () => {
     // Cerchiamo il contenitore dove iniettare i post
     const container = document.getElementById('articles-container');
-    if (!container) {
-      console.log("ℹ️ [NostrPress] Nessun contenitore #articles-container trovato. Salto caricamento.");
-      return;
-    }
+    if (!container) return;
 
-    // Recupera la variabile passata dal layout
-    const rawNpub = window.NOSTR_CONFIG?.npub;
-    console.log("🔍 [NostrPress] NPUB rilevata dalla configurazione:", rawNpub);
+    // Recupera la NPUB che abbiamo iniettato nel layout
+    const npubFromEnv = window.NOSTR_CONFIG?.npub;
+    console.log("[NostrPress] NPUB recuperata dall'ambiente:", npubFromEnv);
 
-    const pubkeyHex = decodeNpubToHex(rawNpub);
+    const pubkey = getPubkeyHex(npubFromEnv);
     const relays = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.nostr.band'];
 
-    if (!pubkeyHex) {
-      console.error("❌ [NostrPress] Impossibile procedere senza una Pubkey HEX valida.");
-      container.innerHTML = "<p>Configurazione mancante (NPUB).</p>";
+    if (!pubkey) {
+      console.error("[NostrPress] Pubkey non valida o mancante. Controlla la variabile NPUB su Netlify.");
+      container.innerHTML = "<p>Errore di configurazione: NPUB non trovata.</p>";
       return;
     }
 
@@ -58,50 +64,50 @@
         throw new Error("Libreria NostrTools non caricata correttamente.");
       }
 
-      console.log("🌐 [NostrPress] Connessione ai relay in corso...");
+      console.log("[NostrPress] Connessione ai relay in corso...");
       const pool = new window.NostrTools.SimplePool();
       
       // Recuperiamo gli articoli (Kind 30023)
-      console.log("📡 [NostrPress] Richiesta eventi Kind 30023 per:", pubkeyHex);
-      let articles = await pool.querySync(relays, {
-        authors: [pubkeyHex],
+      console.log(`[NostrPress] Fetching articoli per pubkey: ${pubkey}...`);
+
+      // Filtro identico a quello di fetchArticles in client.js
+      const filter = {
+        authors: [pubkey],
         kinds: [30023],
         limit: 10
-      });
+      };
 
-      console.log(`📦 [NostrPress] Ricevuti ${articles.length} articoli`);
+      const events = await pool.querySync(relays, filter);
+      console.log(`[NostrPress] Eventi ricevuti: ${events.length}`);
 
-      if (articles.length === 0) {
-        container.innerHTML = "<p>Nessun articolo trovato su questi relay.</p>";
+      if (events.length === 0) {
+        container.innerHTML = "<p>Nessun articolo trovato.</p>";
         return;
       }
 
-      container.innerHTML = '';
+      // Ordina per data (come nel tuo sistema di build)
+      const articles = events.sort((a, b) => b.created_at - a.created_at);
 
+      container.innerHTML = '';
       articles.forEach(article => {
-        const title = article.tags.find(t => t[0] === 'title')?.[1] || "Senza Titolo";
+        const title = article.tags.find(t => t[0] === 'title')?.[1] || "Senza titolo";
         const summary = article.tags.find(t => t[0] === 'summary')?.[1] || article.content.substring(0, 150) + "...";
         const slug = article.tags.find(t => t[0] === 'd')?.[1];
 
-        const html = `
-          <article class="p-6 border rounded-2xl bg-white shadow-sm hover:shadow-md transition mb-6">
+        container.insertAdjacentHTML('beforeend', `
+          <article class="p-6 border rounded-2xl bg-white mb-6 shadow-sm hover:shadow-md transition">
             <h2 class="text-2xl font-bold mb-2">${title}</h2>
             <p class="text-slate-600 mb-4">${summary}</p>
-            <a href="/article.html?id=${article.id}&slug=${slug}" class="text-blue-600 font-medium hover:underline">Leggi tutto →</a>
+            <a href="/${slug}.html" class="text-blue-600 font-medium">Leggi tutto →</a>
           </article>
-        `;
-        container.insertAdjacentHTML('beforeend', html);
+        `);
       });
 
-      console.log("✨ [NostrPress] Rendering completato");
-
-    } catch (error) {
-      console.error("❌ [NostrPress] Errore critico:", error);
-      container.innerHTML = "<p>Errore nel caricamento degli articoli. Controlla la console.</p>";
+    } catch (err) {
+      console.error("[NostrPress] Errore durante il caricamento:", err);
+      container.innerHTML = "<p>Errore nel caricamento dei contenuti live.</p>";
     }
   };
 
-  // Esecuzione
-  handleExternalLinks();
   await loadNostrContent();
 })();
