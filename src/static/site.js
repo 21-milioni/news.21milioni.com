@@ -1,4 +1,4 @@
-async () => {
+(async () => {{
   // --- PARTE 1: Utility per i link esterni
   console.log("🚀 [NostrPress] Script avviato");
 
@@ -32,7 +32,7 @@ async () => {
   };
 
   // --- PARTE 2: Caricamento dinamico da Nostr
-  const loadNostrContent = async () => {{
+  const loadNostrContent = async () => {
     // Cerchiamo il contenitore dove iniettare i post
     const container = document.getElementById('articles-container');
     if (!container) {
@@ -104,4 +104,4 @@ async () => {
   // Esecuzione
   handleExternalLinks();
   await loadNostrContent();
-};
+})();
