@@ -1,4 +1,4 @@
-(async () => {
+async () => {
   // --- PARTE 1: Utility per i link esterni
   console.log("🚀 [NostrPress] Script avviato");
 
@@ -104,4 +104,4 @@
   // Esecuzione
   handleExternalLinks();
   await loadNostrContent();
-});
+};
