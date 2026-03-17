@@ -2,7 +2,16 @@ export const defaultConfig = {
   input: {
     npub_or_nprofile: ""
   },
-  relays: ["wss://relay.damus.io", "wss://nos.lol"],
+  relays: [
+    "wss://relay.damus.io",
+    "wss://nos.lol",
+    "wss://relay.primal.net",
+    "wss://relay.snort.social",
+    "wss://nostr.land",
+    "wss://nostr-pub.wellorder.net",
+    "wss://offchain.pub",
+    "wss://relay.nostr.band"
+  ],
   trusted_only: true,
   output_dir: "./dist",
   site: {
