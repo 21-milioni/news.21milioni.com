@@ -30,6 +30,12 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Cache nostr-cache
+        uses: actions/cache@v4
+        with:
+          path: nostr-cache
+          key: nostr-cache
+
       - name: Install dependencies
         run: npm ci
 
