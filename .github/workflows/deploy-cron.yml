@@ -34,7 +34,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: nostr-cache
-          key: nostr-cache
+          key: nostr-cache-${{ github.run_id }}
+          restore-keys: |
+            nostr-cache-
 
       - name: Install dependencies
         run: npm ci
