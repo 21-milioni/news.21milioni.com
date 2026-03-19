@@ -102,6 +102,7 @@ function writeStaticAssets(outputDir, rootDir) {
 
   // Copy favicon files
   const faviconFiles = [
+    "favicon.png",
     "favicon.ico",
     "favicon.svg",
     "favicon-16x16.png",
