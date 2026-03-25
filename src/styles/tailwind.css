@@ -73,10 +73,16 @@
     @apply border-l-4 border-blue-500 pl-6 py-2 my-8 italic text-slate-600 bg-blue-50 rounded-r-xl;
   }
   
-  .prose ul, .prose ol {
-    @apply my-6 space-y-2;
+  .prose ul {
+    @apply my-6 space-y-2 pl-6;
+    list-style-type: disc;
   }
-  
+
+  .prose ol {
+    @apply my-6 space-y-2 pl-6;
+    list-style-type: decimal;
+  }
+
   .prose li {
     @apply text-base lg:text-lg leading-relaxed;
   }
