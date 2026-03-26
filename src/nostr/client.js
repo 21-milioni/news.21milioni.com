@@ -101,12 +101,27 @@ export async function fetchArticles(pool, config, pubkey) {
 
   const deletedIds = collectDeletedIds(deletions);
   const deduped = new Map();
+  const replaceableByD = new Map();
   for (const event of events) {
     if (!event.content || !event.content.trim()) continue;
     if (deletedIds.has(event.id)) continue;
-    if (!deduped.has(event.id)) {
+
+    // Kind 30023 (NIP-23) are parameterized replaceable events:
+    // deduplicate by d-tag, keeping only the newest version
+    if (event.kind === 30023) {
+      const dTag = event.tags.find(t => t[0] === "d")?.[1] || "";
+      const key = `30023:${event.pubkey}:${dTag}`;
+      const existing = replaceableByD.get(key);
+      if (!existing || event.created_at > existing.created_at) {
+        replaceableByD.set(key, event);
+      }
+    } else if (!deduped.has(event.id)) {
       deduped.set(event.id, event);
     }
+  }
+
+  for (const event of replaceableByD.values()) {
+    deduped.set(event.id, event);
   }
 
   const result = Array.from(deduped.values());
