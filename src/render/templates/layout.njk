@@ -255,17 +255,17 @@
 
       <!-- Main content: responsive -->
       <div class="flex-1 flex flex-col">
-        <main id="main-content" class="flex-1 w-full px-6 lg:px-12 xl:px-16 py-12 lg:py-16 xl:py-20 mt-16 lg:mt-0" role="main">
+        <div class="border-b border-slate-200 px-6 lg:px-12 xl:px-16 py-3 bg-slate-50 mt-16 lg:mt-0">
+          <div class="max-w-5xl mx-auto">
+            <p class="text-sm text-slate-500">Generated from Nostr using <a href="https://github.com/21-milioni/news.21milioni.com" target="_blank" rel="noopener noreferrer" class="text-slate-700 hover:text-slate-900 transition-colors duration-200 font-medium">NostrPress</a></p>
+          </div>
+        </div>
+
+        <main id="main-content" class="flex-1 w-full px-6 lg:px-12 xl:px-16 py-12 lg:py-16 xl:py-20" role="main">
           <div class="max-w-5xl mx-auto animate-fade-in">
             {% block content %}{% endblock %}
           </div>
         </main>
-
-        <footer class="border-t border-slate-200 px-6 lg:px-12 xl:px-16 py-8 bg-slate-50" role="contentinfo">
-          <div class="max-w-5xl mx-auto">
-            <p class="text-sm text-slate-500">Generated from Nostr using <a href="https://github.com/21-milioni/news.21milioni.com" target="_blank" rel="noopener noreferrer" class="text-slate-700 hover:text-slate-900 transition-colors duration-200 font-medium">NostrPress</a></p>
-          </div>
-        </footer>
       </div>
     </div>
 
