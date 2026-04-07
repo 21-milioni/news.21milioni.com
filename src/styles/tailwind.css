@@ -23,6 +23,7 @@
   /* Prose styling for article content */
   .prose {
     @apply text-slate-700;
+    overflow-wrap: break-word;
   }
   
   .prose h1, .prose h2, .prose h3, .prose h4 {

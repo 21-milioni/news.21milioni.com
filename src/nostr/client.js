@@ -129,23 +129,55 @@ export async function fetchArticles(pool, config, pubkey) {
   return result;
 }
 
-export async function fetchComments(pool, relays, articleEventIds) {
-  if (articleEventIds.length === 0) return new Map();
+export async function fetchComments(pool, relays, articles) {
+  if (articles.length === 0) return new Map();
 
-  // Fetch kind 1 events that reply to any of our articles
-  const filter = {
-    kinds: [1],
-    "#e": articleEventIds
-  };
+  const articleEventIds = articles.map(a => a.id);
+  const articleIdSet = new Set(articleEventIds);
 
-  const events = await pool.querySync(relays, filter);
+  // Build addressable coordinates for kind 30023 articles: "30023:<pubkey>:<d-tag>"
+  const coordToId = new Map();
+  const articleCoords = [];
+  for (const article of articles) {
+    if (article.kind === 30023 && article.pubkey) {
+      const coord = `30023:${article.pubkey}:${article.dTag || ""}`;
+      coordToId.set(coord, article.id);
+      articleCoords.push(coord);
+    }
+  }
+
+  // Query both #e (event ID) and #a (addressable coordinate) in parallel
+  // Support kind 1 (short text note) and kind 1111 (NIP-22 Comment)
+  const commentKinds = [1, 1111];
+  const queries = [];
+  if (articleEventIds.length > 0) {
+    queries.push(pool.querySync(relays, { kinds: commentKinds, "#e": articleEventIds }));
+  }
+  if (articleCoords.length > 0) {
+    queries.push(pool.querySync(relays, { kinds: commentKinds, "#a": articleCoords }));
+  }
+
+  const results = await Promise.all(queries);
+  // Deduplicate events (a comment may match both filters)
+  const uniqueEvents = [...new Map(results.flat().map(e => [e.id, e])).values()];
+
   const commentsByArticle = new Map();
 
-  // Group comments by article event ID
-  for (const event of events) {
-    const replyToTag = event.tags.find(tag => tag[0] === "e" && articleEventIds.includes(tag[1]));
-    if (replyToTag) {
-      const articleId = replyToTag[1];
+  // Group comments by article event ID, checking e tags then a tags
+  for (const event of uniqueEvents) {
+    let articleId = null;
+
+    const eTag = event.tags.find(tag => tag[0] === "e" && articleIdSet.has(tag[1]));
+    if (eTag) {
+      articleId = eTag[1];
+    } else {
+      const aTag = event.tags.find(tag => tag[0] === "a" && coordToId.has(tag[1]));
+      if (aTag) {
+        articleId = coordToId.get(aTag[1]);
+      }
+    }
+
+    if (articleId) {
       if (!commentsByArticle.has(articleId)) {
         commentsByArticle.set(articleId, []);
       }
@@ -154,7 +186,7 @@ export async function fetchComments(pool, relays, articleEventIds) {
   }
 
   // Fetch author profiles for all comment authors
-  const authorPubkeys = [...new Set(events.map(e => e.pubkey))];
+  const authorPubkeys = [...new Set(uniqueEvents.map(e => e.pubkey))];
   const profiles = new Map();
   
   if (authorPubkeys.length > 0) {

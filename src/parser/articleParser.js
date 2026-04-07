@@ -59,6 +59,9 @@ export function parseArticle(event) {
 
   return {
     id: event.id,
+    kind: event.kind,
+    pubkey: event.pubkey,
+    dTag: slugFromTag || "",
     title,
     slug,
     naddr,

@@ -201,8 +201,7 @@ async function run() {
   }));
 
   // Fetch comments for all articles
-  const articleEventIds = withSummary.map(a => a.id);
-  const commentsMap = await fetchComments(pool, identity.relays, articleEventIds);
+  const commentsMap = await fetchComments(pool, identity.relays, withSummary);
   await pool.close(identity.relays);
 
   // Attach comments to articles

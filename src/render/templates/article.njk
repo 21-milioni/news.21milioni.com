@@ -8,7 +8,7 @@
 
 {% block content %}
   <!-- Banner -->
-  <a href="https://bitcoincolosseum.it" target="_blank" rel="noopener noreferrer" class="block mb-8">
+  <a href="https://bitcoincolosseum.it" target="_blank" rel="noopener noreferrer" class="block mb-8 -mt-6 lg:-mt-10 xl:-mt-14">
     <img src="{{ site.base_url }}/banner.png" alt="Bitcoin Colosseum" class="w-full rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300" loading="eager" />
   </a>
 
@@ -58,7 +58,7 @@
     {% if article.image %}
     <div class="-mx-6 lg:-mx-12 xl:-mx-16 mb-12">
       <div class="relative overflow-hidden rounded-3xl bg-slate-100">
-        <img src="{{ article.image }}" alt="{{ article.title }}" class="w-full max-h-[500px] object-cover" itemprop="image" />
+        <img src="{{ article.image }}" alt="{{ article.title }}" class="w-full max-w-full max-h-[500px] object-cover block" itemprop="image" />
       </div>
     </div>
     {% endif %}
@@ -202,11 +202,43 @@
     {% endif %}
   </article>
 
+  {% if article.comments.length %}
+    <section class="mt-20 pt-16 border-t border-slate-200 space-y-8" aria-labelledby="comments-heading">
+      <div class="space-y-2">
+        <h2 id="comments-heading" class="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">Comments</h2>
+        <p class="text-slate-500">{{ article.comments.length }} {{ 'comment' if article.comments.length == 1 else 'comments' }}</p>
+      </div>
+
+      <div class="space-y-6">
+        {% for comment in article.comments %}
+          <article class="group rounded-2xl border border-slate-200 bg-white p-6 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300">
+            <div class="flex items-start gap-4">
+              {% if comment.author_picture %}
+                <img src="{{ comment.author_picture }}" alt="{{ comment.author_name or 'Anonymous' }}" class="w-12 h-12 rounded-full ring-2 ring-slate-200 group-hover:ring-blue-300 transition-all duration-300" loading="lazy" />
+              {% else %}
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 text-sm font-medium ring-2 ring-slate-200 group-hover:ring-blue-300 transition-all duration-300" aria-label="Commenter avatar">
+                  {{ (comment.author_name or comment.pubkey)[0] | upper }}
+                </div>
+              {% endif %}
+              <div class="flex-1 min-w-0 space-y-2">
+                <div class="flex items-baseline gap-3">
+                  <span class="font-semibold text-slate-900">{{ comment.author_name or comment.pubkey.slice(0, 8) + '...' }}</span>
+                  <time datetime="{{ comment.created_at * 1000 | date('iso') }}" class="text-xs font-medium text-slate-500">{{ (comment.created_at * 1000) | date("Y-m-d") }}</time>
+                </div>
+                <p class="text-base text-slate-700 whitespace-pre-wrap break-words leading-relaxed">{{ comment.content }}</p>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
   <!-- Related Articles -->
   {% if relatedArticles.length %}
     <section class="mt-20 pt-16 border-t border-slate-200 space-y-8" aria-labelledby="related-articles-heading">
       <h2 id="related-articles-heading" class="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">Related Articles</h2>
-      
+
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for related in relatedArticles %}
           <article class="group rounded-2xl border border-slate-200 bg-white overflow-hidden hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300">
@@ -227,38 +259,14 @@
                 {% if related.readingTime %}
                   <span>{{ related.readingTime }} min read</span>
                 {% endif %}
-              </div>
-            </div>
-          </article>
-        {% endfor %}
-      </div>
-    </section>
-  {% endif %}
-
-  {% if article.comments.length %}
-    <section class="mt-20 pt-16 border-t border-slate-200 space-y-8" aria-labelledby="comments-heading">
-      <div class="space-y-2">
-        <h2 id="comments-heading" class="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">Comments</h2>
-        <p class="text-slate-500">{{ article.comments.length }} {{ 'comment' if article.comments.length == 1 else 'comments' }}</p>
-      </div>
-      
-      <div class="space-y-6">
-        {% for comment in article.comments %}
-          <article class="group rounded-2xl border border-slate-200 bg-white p-6 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300">
-            <div class="flex items-start gap-4">
-              {% if comment.author_picture %}
-                <img src="{{ comment.author_picture }}" alt="{{ comment.author_name or 'Anonymous' }}" class="w-12 h-12 rounded-full ring-2 ring-slate-200 group-hover:ring-blue-300 transition-all duration-300" loading="lazy" />
-              {% else %}
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 text-sm font-medium ring-2 ring-slate-200 group-hover:ring-blue-300 transition-all duration-300" aria-label="Commenter avatar">
-                  {{ (comment.author_name or comment.pubkey)[0] | upper }}
-                </div>
-              {% endif %}
-              <div class="flex-1 min-w-0 space-y-2">
-                <div class="flex items-baseline gap-3">
-                  <span class="font-semibold text-slate-900">{{ comment.author_name or comment.pubkey.slice(0, 8) + '...' }}</span>
-                  <time datetime="{{ comment.created_at * 1000 | date('iso') }}" class="text-xs font-medium text-slate-500">{{ (comment.created_at * 1000) | date("Y-m-d") }}</time>
-                </div>
-                <p class="text-base text-slate-700 whitespace-pre-wrap break-words leading-relaxed">{{ comment.content }}</p>
+                {% if related.comments.length %}
+                  <span class="inline-flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    {{ related.comments.length }}
+                  </span>
+                {% endif %}
               </div>
             </div>
           </article>

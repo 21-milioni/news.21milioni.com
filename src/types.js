@@ -56,6 +56,9 @@
 /**
  * @typedef {Object} Article
  * @property {string} id
+ * @property {number} kind
+ * @property {string} pubkey
+ * @property {string} dTag
  * @property {string} title
  * @property {string} slug
  * @property {string} summary
