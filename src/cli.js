@@ -100,7 +100,7 @@ function writeStaticAssets(outputDir, rootDir) {
     "favicon-16x16.png",
     "favicon-32x32.png",
     "apple-touch-icon.png",
-    "banner.png"
+    // "banner.png"
   ];
   
   for (const file of faviconFiles) {
