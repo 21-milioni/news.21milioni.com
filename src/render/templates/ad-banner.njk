@@ -1,0 +1,116 @@
+<!-- Ad Banner Component -->
+<div class="ad-container" id="adBanner">
+  <!-- Bait invisibile per ad-block -->
+  <div id="adBait" class="ad-bait"></div>
+
+  <div class="ad-banner-wrapper mx-auto my-1 max-w-[800px]">
+    <div id="adContent">
+      <!-- Content will be populated by JavaScript -->
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const API_ORIGIN = 'https://api.bitcoinbeer.events';
+  const adBait = document.getElementById('adBait');
+  const adContent = document.getElementById('adContent');
+  
+  // Check ad-block
+  function checkAdBlock() {
+    const style = getComputedStyle(adBait);
+    return style.display === 'none' || style.visibility === 'hidden' || adBait.offsetParent === null;
+  }
+
+  async function fetchAd() {
+    const API_URL = `${API_ORIGIN}/api/get-ad.php`;
+    try {
+      const res = await fetch(API_URL, { cache: 'no-store' });
+      if (!res.ok) {
+        console.error('Errore chiamata API ad:', res.status);
+        return null;
+      }
+      return await res.json();
+    } catch (err) {
+      console.error('fetchAd error:', err);
+      return null;
+    }
+  }
+
+  function getAbsoluteImageUrl(imageUrl) {
+    if (!imageUrl) return '';
+    if (/^https?:\/\//.test(imageUrl)) return imageUrl;
+    return new URL(imageUrl, API_ORIGIN).href;
+  }
+
+  function getClickHref(ad) {
+    if (ad.id) {
+      return `${API_ORIGIN}/api/track-click.php?banner_id=${ad.id}`;
+    }
+    return ad.link || '#';
+  }
+
+  function renderAdContent(ad) {
+    let html = '';
+    
+    if (ad && ad.image_url && (ad.id || ad.link)) {
+      const imageUrl = getAbsoluteImageUrl(ad.image_url);
+      const clickHref = getClickHref(ad);
+      const trackingAttrs = ad.id ? `data-umami-event="Ad: Click Banner" data-umami-event-id="${ad.id}"` : '';
+      
+      html = `
+        <div class="ad-label text-xs uppercase text-neutral">
+          Advertisement
+        </div>
+        <div class="ad-content border border-base-200 rounded-lg bg-base-100 p-4 flex flex-col items-center">
+          <a
+            href="${clickHref}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-full"
+            ${trackingAttrs}
+          >
+            <img
+              src="${imageUrl}"
+              alt="${ad.alt || 'Banner pubblicitario'}"
+              class="w-full object-contain rounded-md shadow-sm hover:opacity-90 transition-opacity"
+            />
+          </a>
+        </div>
+      `;
+    } else {
+      html = `
+        <div class="ad-placeholder-neutral"></div>
+      `;
+    }
+    
+    adContent.innerHTML = html;
+  }
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  function init() {
+    const adBlocked = checkAdBlock();
+    
+    if (adBlocked) {
+      renderAdContent(null);
+    } else {
+      fetchAd().then(ad => {
+        renderAdContent(ad);
+      });
+    }
+  }
+})();
+</script>
+
+<style>
+.ad-bait { width: 1px; height: 1px; position: absolute; left: -9999px; }
+.ad-banner-wrapper { position: relative; z-index: 10; }
+.ad-placeholder-neutral { height: 200px; }
+.ad-content img { max-height: 200px; }
+</style>
