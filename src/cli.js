@@ -172,7 +172,14 @@ function generateSitemap(context, outputDir) {
 
   const urls = [];
   urls.push(`${base}/`);
-  urls.push(`${base}/author/`);
+
+  if (context.allAuthors) {
+    for (const author of context.allAuthors) {
+      if (!author.isHome) {
+        urls.push(`${base}${author.pageUrl.startsWith("/") ? author.pageUrl : "/" + author.pageUrl}`);
+      }
+    }
+  }
 
   for (const article of context.articles) {
     urls.push(`${base}/${article.slug}.html`);
@@ -297,8 +304,31 @@ async function run() {
   }
   writeStaticAssets(config.output_dir, packageRoot);
   runTailwind(config.output_dir, packageRoot);
-  generateRss(context, config.output_dir);
-  generateSitemap(context, config.output_dir);
+
+  // Generate global RSS and Sitemap using articles from ALL authors
+  const allProcessedArticles = processedAuthorsData.flatMap(a => a.articles);
+  const sortedAllArticles = sortArticles(allProcessedArticles);
+  
+  // Use primary author for site-wide metadata in RSS/Sitemap
+  const globalContext = buildContext(
+    config, 
+    primaryAuthor.identity.npub, 
+    primaryAuthor.identity.pubkey, 
+    primaryAuthor.profile, 
+    sortedAllArticles
+  );
+  
+  // Include all authors in context for sitemap generation
+  if (processedAuthorsData.length > 1) {
+    globalContext.allAuthors = processedAuthorsData.map((a, index) => ({
+      npub: a.identity.npub,
+      isHome: index === 0,
+      pageUrl: index === 0 ? "/" : `/${a.identity.npub}.html`
+    }));
+  }
+
+  generateRss(globalContext, config.output_dir);
+  generateSitemap(globalContext, config.output_dir);
 }
 
 run().then(() => {
