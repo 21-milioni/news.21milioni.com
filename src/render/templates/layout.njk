@@ -268,9 +268,102 @@
 
       <!-- Mobile Header -->
       <div class="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200">
-        <div class="px-6 py-4">
-          <a href="{{ site.base_url }}/{{ currentPageUrl }}" class="text-2xl font-bold tracking-tight text-slate-900" aria-label="Home">{{ site.title }}</a>
+        <div class="px-6 py-4 flex items-center justify-between gap-4">
+          <a href="{{ site.base_url }}/{{ currentPageUrl }}" class="min-w-0 truncate text-2xl font-bold tracking-tight text-slate-900" aria-label="Home">{{ site.title }}</a>
+          <button
+            type="button"
+            class="mobile-menu-toggle inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors duration-200 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-controls="mobile-menu"
+            aria-expanded="false"
+            aria-label="Open menu"
+          >
+            <svg class="menu-icon-open h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"></path>
+            </svg>
+            <svg class="menu-icon-close hidden h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
         </div>
+
+        <nav id="mobile-menu" class="mobile-menu hidden border-t border-slate-200 bg-white shadow-xl" aria-label="Mobile navigation">
+          <div class="max-h-[calc(100vh-76px)] overflow-y-auto px-6 py-6 space-y-6">
+            {% if author %}
+            <div class="flex items-center gap-4">
+              {% if author.profile.picture %}
+              <img class="h-14 w-14 rounded-2xl object-cover ring-2 ring-white shadow-md" src="{{ author.profile.picture }}" alt="Profile picture" />
+              {% endif %}
+              <div class="min-w-0">
+                <a href="{{ site.base_url }}/{{ currentPageUrl }}" class="block truncate text-lg font-bold tracking-tight text-slate-900">
+                  {{ author.profile.display_name or author.profile.name or site.title }}
+                </a>
+                {% if author.profile.about %}
+                <p class="mt-1 line-clamp-2 text-sm leading-snug text-slate-600">{{ author.profile.about }}</p>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <div>
+              <a href="{{ site.base_url }}/" class="block text-lg font-bold tracking-tight text-slate-900">{{ site.title }}</a>
+              <p class="mt-1 text-sm leading-snug text-slate-600">{{ site.description }}</p>
+            </div>
+            {% endif %}
+
+            {% if author %}
+            <div class="space-y-3">
+              <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Profile Links</p>
+              <div class="flex flex-wrap gap-3">
+                {% if author.profile.website %}
+                <a href="{{ author.profile.website }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors duration-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600" aria-label="Website">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                </a>
+                {% endif %}
+                {% if author.npub %}
+                <a href="https://primal.net/p/{{ author.npub }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors duration-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-600" aria-label="Nostr Profile">
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M126.07 0C197 0 254.5 57.31 254.5 128s-57.5 128-128.43 128c-50.35 0-93.93-28.88-114.98-70.92C4.87 172.07 1.5 157.45 1.5 142.08c0-55.14 44.85-99.84 100.17-99.84 40.49 0 75.37 23.95 91.16 58.4 .76 1.66-1.69 3.14-3.05 1.94-9.08-8.07-21.05-12.98-34.17-12.98-28.37 0-51.37 22.92-51.37 51.2 0 2.17.14 4.3.4 6.4v.02c6.02 37.1 35 55.66 68.95 55.66s62.28-23.87 69.07-55.7c1.03-6.25 1.56-12.66 1.56-19.2 0-65.04-52.9-117.76-118.15-117.76-39.33 0-74.17 19.15-95.65 48.61-.49.67-1.05 1.29-1.68 1.83-6.48 5.68-12.29 12.11-17.29 19.15-1.35 1.9-4.62.46-3.71-1.7C26.76 32.22 72.39 0 126.07 0z"/></svg>
+                </a>
+                {% endif %}
+                {% if author.profile.twitter %}
+                <a href="https://twitter.com/{{ author.profile.twitter }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors duration-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-500" aria-label="Twitter">
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+                </a>
+                {% endif %}
+                {% if author.profile.github %}
+                <a href="https://github.com/{{ author.profile.github }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors duration-200 hover:border-slate-400 hover:bg-slate-100 hover:text-slate-900" aria-label="GitHub">
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg>
+                </a>
+                {% endif %}
+                {% if author.profile.telegram %}
+                <a href="https://t.me/{{ author.profile.telegram }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors duration-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-400" aria-label="Telegram">
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"></path></svg>
+                </a>
+                {% endif %}
+                {% if author.profile.lud16 %}
+                <a href="lightning:{{ author.profile.lud16 }}" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors duration-200 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-500" aria-label="Lightning">
+                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"></path></svg>
+                </a>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            {% if allAuthors and allAuthors.length > 1 %}
+            <div class="space-y-3">
+              <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Other Authors</p>
+              <div class="grid gap-2">
+                {% for author in allAuthors %}
+                {% if author.npub != currentAuthorNpub %}
+                <a href="{{ author.pageUrl }}" class="block rounded-lg border border-slate-200 px-4 py-3 text-slate-700 transition-colors duration-200 hover:border-blue-300 hover:bg-blue-50">
+                  <span class="block text-sm font-semibold">{{ author.profile.display_name or author.profile.name }}</span>
+                  <span class="block text-xs text-slate-500">{{ author.articleCount }} articles</span>
+                </a>
+                {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </nav>
       </div>
 
       <!-- Main content: responsive -->
@@ -282,6 +375,48 @@
         </main>
       </div>
     </div>
+
+    <script>
+      (function () {
+        const toggle = document.querySelector(".mobile-menu-toggle");
+        const menu = document.getElementById("mobile-menu");
+
+        if (!toggle || !menu) return;
+
+        const openIcon = toggle.querySelector(".menu-icon-open");
+        const closeIcon = toggle.querySelector(".menu-icon-close");
+
+        function setMenuOpen(isOpen) {
+          menu.classList.toggle("hidden", !isOpen);
+          toggle.setAttribute("aria-expanded", String(isOpen));
+          toggle.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+          openIcon.classList.toggle("hidden", isOpen);
+          closeIcon.classList.toggle("hidden", !isOpen);
+        }
+
+        toggle.addEventListener("click", function () {
+          setMenuOpen(toggle.getAttribute("aria-expanded") !== "true");
+        });
+
+        menu.addEventListener("click", function (event) {
+          if (event.target.closest("a")) {
+            setMenuOpen(false);
+          }
+        });
+
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape") {
+            setMenuOpen(false);
+          }
+        });
+
+        document.addEventListener("click", function (event) {
+          if (!menu.classList.contains("hidden") && !event.target.closest(".mobile-menu") && !event.target.closest(".mobile-menu-toggle")) {
+            setMenuOpen(false);
+          }
+        });
+      })();
+    </script>
 
   </body>
 </html>
