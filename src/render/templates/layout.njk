@@ -269,7 +269,10 @@
       <!-- Mobile Header -->
       <div class="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200">
         <div class="px-6 py-4 flex items-center justify-between gap-4">
-          <a href="{{ site.base_url }}/{{ currentPageUrl }}" class="min-w-0 truncate text-2xl font-bold tracking-tight text-slate-900" aria-label="Home">{{ site.title }}</a>
+          {% if author and author.profile.picture %}
+          <img class="h-10 w-10 shrink-0 rounded-xl object-cover ring-1 ring-slate-200" src="{{ author.profile.picture }}" alt="Profile picture" />
+          {% endif %}
+          <a href="{{ site.base_url }}/{{ currentPageUrl }}" class="min-w-0 flex-1 truncate text-2xl font-bold tracking-tight text-slate-900" aria-label="Home">{{ site.title }}</a>
           <button
             type="button"
             class="mobile-menu-toggle inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors duration-200 hover:border-blue-300 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
