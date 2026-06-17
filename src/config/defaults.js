@@ -1,6 +1,7 @@
 export const defaultConfig = {
   input: {
-    npub_or_nprofile: ""
+    npub_or_nprofile: "",
+    pubkeys: []  // Array of pubkeys to fetch articles from
   },
   relays: [
     "wss://relay.damus.io",

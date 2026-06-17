@@ -2,6 +2,7 @@ import { defaultConfig } from "./defaults.js";
 
 export function loadConfig(cliBaseUrl) {
   const npub = process.env.NPUB || "";
+  const pubkeys = process.env.PUBKEYS ? process.env.PUBKEYS.split(",").map(p => p.trim()).filter(p => p) : [];
   const relays = process.env.RELAYS ? process.env.RELAYS.split(",") : defaultConfig.relays;
   const outputDir = process.env.OUTPUT_DIR || defaultConfig.output_dir;
   
@@ -46,7 +47,8 @@ export function loadConfig(cliBaseUrl) {
   return {
     ...defaultConfig,
     input: {
-      npub_or_nprofile: npub
+      npub_or_nprofile: npub,
+      pubkeys: pubkeys
     },
     relays,
     output_dir: outputDir,

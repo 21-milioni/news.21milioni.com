@@ -91,12 +91,24 @@ export function createRenderer(templateDir) {
   return env;
 }
 
-export function renderSite(context, outputDir) {
+export function renderSite(context, outputDir, indexPath = "index.html") {
   const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
   const templatesDir = path.join(packageRoot, "src/render/templates");
   const env = createRenderer(templatesDir);
 
   const articlesSorted = [...context.articles].sort((a, b) => b.published_at - a.published_at);
+
+  // If multiple authors, output pubkey data as JSON
+  if (context.allAuthors && context.allAuthors.length > 1) {
+    const pubkeyData = {
+      authors: context.allAuthors,
+      currentAuthorPubkey: context.author.pubkey
+    };
+    writeFile(
+      path.join(outputDir, "js", "pubkey-data.json"),
+      JSON.stringify(pubkeyData, null, 2)
+    );
+  }
 
   // Enrich articles with reading time, excerpts, and related articles
   for (const article of articlesSorted) {
@@ -106,7 +118,7 @@ export function renderSite(context, outputDir) {
   }
 
   const indexHtml = env.render("index.njk", { ...context, articles: articlesSorted });
-  writeFile(path.join(outputDir, "index.html"), indexHtml);
+  writeFile(path.join(outputDir, indexPath), indexHtml);
 
   const tagMap = new Map();
   for (const article of articlesSorted) {

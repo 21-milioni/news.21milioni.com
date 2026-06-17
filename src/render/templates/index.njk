@@ -79,15 +79,17 @@
   -->
 
   <div class="space-y-12">
-    <header>
-      <h1 class="text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-slate-900 mb-4">Leggi l'ultimo articolo</h1>
-      <div class="h-1 w-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
-    </header>
+    <!-- Featured Section -->
+    <section class="featured-section">
+      <header>
+        <h1 class="text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-slate-900 mb-4">Leggi l'ultimo articolo</h1>
+        <div class="h-1 w-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+      </header>
 
-    <!-- Featured Article (First Post) -->
-    {% if articles.length > 0 %}
-    {% set featured = articles[0] %}
-    <article class="group relative">
+      <!-- Featured Article (First Post) -->
+      {% if articles.length > 0 %}
+      {% set featured = articles[0] %}
+      <article class="group relative">
       <a href="{{ site.base_url }}/{{ featured.slug }}.html" class="block">
         <div class="relative rounded-2xl border border-slate-200 bg-white overflow-hidden transition-all duration-500 ease-out hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
           <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/0 to-indigo-500/0 opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
@@ -145,6 +147,7 @@
       </a>
     </article>
     {% endif %}
+    </section>
 
     <!-- Ad Banner -->
     {% include "ad-banner.njk" %}

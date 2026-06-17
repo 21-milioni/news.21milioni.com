@@ -50,6 +50,52 @@ export async function fetchProfileMetadata(pool, relays, pubkey) {
   }
 }
 
+export async function fetchRelayList(pool, relays, pubkey, defaultRelays) {
+  const cacheKey = `relay-list-${pubkey}`;
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    console.log(`Using cached relay list for ${pubkey}`);
+    return cached;
+  }
+
+  try {
+    console.log(`Fetching relay list (kind 10002) for ${pubkey}...`);
+    // Event kind 10002 is NIP-65: relay list metadata
+    const filter = { kinds: [10002], authors: [pubkey], limit: 1 };
+    const events = await pool.querySync(relays, filter);
+    
+    if (events.length === 0) {
+      // No relay list found, use defaults
+      cache.set(cacheKey, defaultRelays);
+      return defaultRelays;
+    }
+
+    const relayEvent = events[0];
+    const userRelays = new Set();
+
+    // Extract relay URLs from tags: ["r", "wss://relay.example.com", "read|write|"]
+    for (const tag of relayEvent.tags) {
+      if (tag[0] === "r" && tag[1]) {
+        userRelays.add(tag[1]);
+      }
+    }
+
+    // Merge user relays with defaults
+    const merged = [...new Set([...userRelays, ...defaultRelays])];
+    
+    if (userRelays.size > 0) {
+      console.log(`Found ${userRelays.size} user relays for ${pubkey}`);
+    }
+    
+    cache.set(cacheKey, merged);
+    return merged;
+  } catch (error) {
+    console.warn(`Error fetching relay list for ${pubkey}:`, error.message);
+    cache.set(cacheKey, defaultRelays);
+    return defaultRelays;
+  }
+}
+
 function collectDeletedIds(events) {
   const deleted = new Set();
   for (const event of events) {
@@ -63,7 +109,8 @@ function collectDeletedIds(events) {
   return deleted;
 }
 
-export async function fetchArticles(pool, config, pubkey) {
+export async function fetchArticles(pool, config, pubkey, customRelays = null) {
+  const relaysToUse = customRelays || config.relays;
   const cacheKey = `articles-${pubkey}-${JSON.stringify(config.fetch)}`;
   const cached = cache.get(cacheKey);
   if (cached) {
@@ -72,7 +119,7 @@ export async function fetchArticles(pool, config, pubkey) {
   }
 
   console.log(`Fetching articles for ${pubkey}...`);
-  const relays = config.relays;
+  const relays = relaysToUse;
   const filters = [];
 
   const baseFilter = {

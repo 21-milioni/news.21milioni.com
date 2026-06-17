@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { SimplePool } from "nostr-tools";
 import slugifyLib from "slugify";
 import { loadConfig } from "./config/loadConfig.js";
-import { resolveIdentity, fetchProfileMetadata, fetchArticles, fetchComments } from "./nostr/client.js";
+import { resolveIdentity, fetchProfileMetadata, fetchRelayList, fetchArticles, fetchComments } from "./nostr/client.js";
 import { parseArticle } from "./parser/articleParser.js";
 import { processMedia, rewriteArticleContent } from "./media/mediaPipeline.js";
 import { renderMarkdown, renderSite } from "./render/render.js";
@@ -110,6 +110,21 @@ function writeStaticAssets(outputDir, rootDir) {
       fs.copyFileSync(srcFile, destFile);
     }
   }
+
+  // Copy JavaScript files
+  const jsDir = path.join(rootDir, "src/static/js");
+  const outputJsDir = path.join(outputDir, "js");
+  if (fs.existsSync(jsDir)) {
+    fs.mkdirSync(outputJsDir, { recursive: true });
+    const files = fs.readdirSync(jsDir).filter((file) => file !== "pubkey-selector.js");
+    for (const file of files) {
+      const srcFile = path.join(jsDir, file);
+      const destFile = path.join(outputJsDir, file);
+      if (fs.statSync(srcFile).isFile()) {
+        fs.copyFileSync(srcFile, destFile);
+      }
+    }
+  }
 }
 
 function runTailwind(outputDir, rootDir) {
@@ -182,46 +197,104 @@ function generateSitemap(context, outputDir) {
 async function run() {
   const args = parseArgs();
   const config = loadConfig(args.baseUrl);
-  if (!config.input.npub_or_nprofile) {
-    throw new Error("NPUB environment variable is required");
-  }
-
-  const identity = resolveIdentity(config.input.npub_or_nprofile, config.relays);
   const pool = new SimplePool();
 
-  const profile = await fetchProfileMetadata(pool, identity.relays, identity.pubkey);
-  const events = await fetchArticles(pool, config, identity.pubkey);
+  // Determine which pubkeys/npubs to process
+  const pubkeysToFetch = [];
+  if (config.input.pubkeys && config.input.pubkeys.length > 0) {
+    // If PUBKEYS env var is set, use those
+    pubkeysToFetch.push(...config.input.pubkeys);
+  } else if (config.input.npub_or_nprofile) {
+    // Otherwise fall back to single NPUB
+    pubkeysToFetch.push(config.input.npub_or_nprofile);
+  } else {
+    throw new Error("Either NPUB or PUBKEYS environment variable is required");
+  }
 
-  const parsed = events.map(parseArticle);
-  const sorted = sortArticles(parsed);
+  // Fetch data for each pubkey
+  const authorsData = [];
+  for (const pubkeyInput of pubkeysToFetch) {
+    const identity = resolveIdentity(pubkeyInput, config.relays);
+    // Fetch user's preferred relay list (NIP-65 event 10002)
+    const userRelays = await fetchRelayList(pool, identity.relays, identity.pubkey, config.relays);
+    const profile = await fetchProfileMetadata(pool, userRelays, identity.pubkey);
+    const events = await fetchArticles(pool, config, identity.pubkey, userRelays);
+    const parsed = events.map(parseArticle);
+    const sorted = sortArticles(parsed);
+    const withSummary = sorted.map((article) => ({
+      ...article,
+      summary: normalizeSummary(article.content, article.summary)
+    }));
+    
+    // Fetch comments for this pubkey's articles
+    const commentsMap = await fetchComments(pool, userRelays, withSummary);
+    const withComments = withSummary.map((article) => ({
+      ...article,
+      comments: commentsMap.get(article.id) || []
+    }));
 
-  const withSummary = sorted.map((article) => ({
-    ...article,
-    summary: normalizeSummary(article.content, article.summary)
-  }));
+    authorsData.push({
+      identity,
+      profile,
+      articles: withComments
+    });
+  }
 
-  // Fetch comments for all articles
-  const commentsMap = await fetchComments(pool, identity.relays, withSummary);
-  await pool.close(identity.relays);
-
-  // Attach comments to articles
-  const withComments = withSummary.map((article) => ({
-    ...article,
-    comments: commentsMap.get(article.id) || []
-  }));
+  await pool.close(config.relays);
 
   cleanOutput(config.output_dir);
 
-  const mediaResult = await processMedia(withComments, config);
-  const rewritten = withComments.map((article) => rewriteArticleContent(article, mediaResult.urlMap));
-
-  const rendered = rewritten.map((article) => ({
-    ...article,
-    html: renderMarkdown(article)
+  // Process media for all articles across all authors
+  const allArticles = authorsData.flatMap(a => a.articles);
+  const mediaResult = await processMedia(allArticles, config);
+  
+  // Rewrite content and render for all articles
+  const processedAuthorsData = authorsData.map((authorData) => ({
+    ...authorData,
+    articles: authorData.articles.map((article) => {
+      const rewritten = rewriteArticleContent(article, mediaResult.urlMap);
+      return {
+        ...rewritten,
+        html: renderMarkdown(rewritten)
+      };
+    })
   }));
 
-  const context = buildContext(config, identity.npub, identity.pubkey, profile, rendered);
-  renderSite(context, config.output_dir);
+  // Use primary author (first one) for site context, but include all authors
+  const primaryAuthor = processedAuthorsData[0];
+  let context;
+  
+  // For multi-author setup: generate separate pages for each author
+  if (processedAuthorsData.length > 1) {
+    // Build list of all authors for navigation
+    const allAuthorsNav = processedAuthorsData.map((a, index) => ({
+      npub: a.identity.npub,
+      pubkey: a.identity.pubkey,
+      profile: a.profile,
+      articleCount: a.articles.length,
+      isHome: index === 0,
+      pageUrl: index === 0 ? "/" : `/${a.identity.npub}.html`
+    }));
+
+    // Generate pages for each author
+    for (let i = 0; i < processedAuthorsData.length; i++) {
+      const authorData = processedAuthorsData[i];
+      const isHomePage = i === 0;
+      const articles = authorData.articles.sort((a, b) => b.published_at - a.published_at);
+      
+      context = buildContext(config, authorData.identity.npub, authorData.identity.pubkey, authorData.profile, articles);
+      context.allAuthors = allAuthorsNav;
+      context.currentAuthorNpub = authorData.identity.npub;
+      context.currentPageUrl = isHomePage ? "" : `${authorData.identity.npub}.html`;
+      
+      const outputPath = isHomePage ? "index.html" : `${authorData.identity.npub}.html`;
+      renderSite(context, config.output_dir, outputPath);
+    }
+  } else {
+    // Single author: use original behavior
+    context = buildContext(config, primaryAuthor.identity.npub, primaryAuthor.identity.pubkey, primaryAuthor.profile, primaryAuthor.articles);
+    renderSite(context, config.output_dir);
+  }
   writeStaticAssets(config.output_dir, packageRoot);
   runTailwind(config.output_dir, packageRoot);
   generateRss(context, config.output_dir);
