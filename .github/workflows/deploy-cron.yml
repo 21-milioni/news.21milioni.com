@@ -46,6 +46,7 @@ jobs:
         run: npm run build
         env:
           NPUB: ${{ secrets.NPUB }}
+          PUBKEYS: ${{ secrets.PUBKEYS }}
           BASE_URL: ${{ secrets.BASE_URL }}
 
       - name: Save nostr-cache
