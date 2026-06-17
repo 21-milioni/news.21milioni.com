@@ -301,7 +301,9 @@ async function run() {
   generateSitemap(context, config.output_dir);
 }
 
-run().catch((error) => {
+run().then(() => {
+  process.exit(0);
+}).catch((error) => {
   console.error(error.message);
   process.exit(1);
 });
